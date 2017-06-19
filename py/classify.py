@@ -14,6 +14,7 @@ import logging
 import numpy as np
 import mmh3
 
+
 class Dataset:
     
     def __init__(self, dataname, in_file, max_lines, out_file, cache, model):
