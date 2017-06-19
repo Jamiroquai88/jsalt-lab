@@ -114,7 +114,6 @@ class Model:
                 self.label2idx[label] = idx
                 self.idx2label.append(label)
     
-
 def learn(train, dev, model, num_epochs=1, dev_iters=None):
     '''Learn a model on the given training data, using the development for validation.
 
@@ -124,36 +123,37 @@ def learn(train, dev, model, num_epochs=1, dev_iters=None):
         model: A Model object.
     '''
     logging.debug('Training...')
-    
+
+    s_grads2 = {}
     model.params = np.zeros(shape=(model.num_labels, model.num_features), dtype=np.float)
     t = 0
     next_print = 1
-    for epoch in range(num_epochs):        
+    for epoch in range(num_epochs):
         # Run SGD for one pass through the train data.
         for x, y in train.iterdata():
-            sgd_step(model.params, x, y, t)
+            sgd_step(model.params, x, y, t, s_grads2)
             t += 1
             if t == next_print:
                 next_print *= 2
-                logging.info('Epoch: %d Iteration: %d Features: %d' % 
+                logging.info('Epoch: %d Iteration: %d Features: %d' %
                              (epoch, t, len(x)))
 
             if dev_iters is not None and t % dev_iters == 0:
                 # Validate on the dev data.
                 _, accuracy = predict_and_eval(model.params, dev)
-                logging.info('Epoch: %d Iteration: %d Features: %d Accuracy on dev: %.2f' % 
+                logging.info('Epoch: %d Iteration: %d Features: %d Accuracy on dev: %.2f' %
                              (epoch, t, len(x), accuracy))
         # Default to validating at the end of each epoch.
         if dev_iters is None and epoch != num_epochs - 1:
             # Validate on the dev data.
             _, accuracy = predict_and_eval(model.params, dev)
-            logging.info('Epoch: %d Iteration: %d Features: %d Accuracy on dev: %.2f' % 
+            logging.info('Epoch: %d Iteration: %d Features: %d Accuracy on dev: %.2f' %
                          (epoch, t, len(x), accuracy))
 
-def sgd_step(params, x, y, t):
+def sgd_step(params, x, y, t, s_grads2):
     #grad_row, grad_col, grad_val = sparse_get_gradient(params, x, y)
     #sparse_update_params(params, grad_row, grad_col, grad_val)
-    
+
     learning_rate = 0.1
     num_labels = params.shape[0]
     p = get_probabilities(params, x)
@@ -161,7 +161,19 @@ def sgd_step(params, x, y, t):
         for feat in x:
             if yprime == y: v = 1
             else:           v = 0
+
+            # Get the sum of square of the gradient.
+            s2 = s_grads2.get(feat, 1.)
+
+            # Adagrad learning rate.
+            eta_0 = 1
+            learning_rate = eta_0 / np.sqrt(s2 + 1e-8)
             params[yprime, feat] += learning_rate * (v - p[yprime])
+
+            # Update the sum of squares.
+            gamma = 0.9
+            #s_grads2[feat] = gamma*s2 + (1-gamma)*(v - p[yprime])**2
+            s_grads2[feat] = s2 + (v - p[yprime])**2
 
 def get_probabilities(params, x):
     p = sparse_mult(params, x)
@@ -194,6 +206,7 @@ def softmax(v, inplace=False):
     p /= np.sum(p)
     return p
 
+
 def predict_and_eval(params, dataset):
     '''Predicts a label for each of the instances in the dataset and computes 
     the accuracy of the predicted labels.
@@ -218,13 +231,15 @@ def predict_and_eval(params, dataset):
     accuracy = float(num_correct) / len(yhats) 
     return yhats, accuracy
 
+
 def summarize(model):
     logging.info('Number of total labels: %d' % (model.num_labels))
     logging.info('Label set: %s' % (sorted(model.label2idx.keys())))
     logging.info('Max features: %d' % (model.num_features))
-    
+
+
 def main(args):
-    '''Trains a model. '''
+    """Trains a model. """
     logging.basicConfig(level=logging.DEBUG, format='%(relativeCreated)6d %(levelname)s - %(message)s')
 
     model = Model(args.num_features, args.labels)

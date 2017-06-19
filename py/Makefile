@@ -28,22 +28,24 @@ dsl: dslf dslc
 
 dslf:
 	mkdir -p $(FEAT_DSL)
-	python features.py -i $(SIM_DSL)/train.txt -o $(FEAT_DSL)/train.txt
-	python features.py -i $(SIM_DSL)/dev.txt -o $(FEAT_DSL)/dev.txt
-	python features.py -i $(SIM_DSL)/test-blind.txt -o $(FEAT_DSL)/test-blind.txt
+	python3 features.py -i $(SIM_DSL)/train.txt -o $(FEAT_DSL)/train.txt
+	python3 features.py -i $(SIM_DSL)/dev.txt -o $(FEAT_DSL)/dev.txt
+	python3 features.py -i $(SIM_DSL)/test-blind.txt -o $(FEAT_DSL)/test-blind.txt
 	cp $(SIM_DSL)/labels.txt $(FEAT_DSL)/labels.txt
 
 dslc:
-	python classify.py \
+	python3 classify.py \
 			--train $(FEAT_DSL)/train.txt \
 			--dev $(FEAT_DSL)/dev.txt \
 			--test $(FEAT_DSL)/test-blind.txt \
 			--test_out $(OUT)/test-dsl.txt \
 			--labels $(FEAT_DSL)/labels.txt \
-			--dev_iters 50000
+			--dev_iters 50000 \
+	                --num_epochs 4 \
+			--num_features 10000000
 
 dslcfast:
-	python classify.py \
+	python3 classify.py \
 			--train $(FEAT_DSL)/train.txt \
 			--dev $(FEAT_DSL)/dev.txt \
 			--test $(FEAT_DSL)/test-blind.txt \
@@ -56,13 +58,13 @@ tat: tatf tatc
 
 tatf:
 	mkdir -p $(FEAT_TAT)
-	python features.py -i $(SIM_TAT)/train.txt -o $(FEAT_TAT)/train.txt
-	python features.py -i $(SIM_TAT)/dev.txt -o $(FEAT_TAT)/dev.txt
-	python features.py -i $(SIM_TAT)/test-blind.txt -o $(FEAT_TAT)/test-blind.txt
+	python3 features.py -i $(SIM_TAT)/train.txt -o $(FEAT_TAT)/train.txt
+	python3 features.py -i $(SIM_TAT)/dev.txt -o $(FEAT_TAT)/dev.txt
+	python3 features.py -i $(SIM_TAT)/test-blind.txt -o $(FEAT_TAT)/test-blind.txt
 	cp $(SIM_TAT)/labels.txt $(FEAT_TAT)/labels.txt
 
 tatc:
-	python classify.py \
+	python3 classify.py \
 			--train $(FEAT_TAT)/train.txt \
 			--dev $(FEAT_TAT)/dev.txt \
 			--test $(FEAT_TAT)/test-blind.txt \
@@ -72,7 +74,7 @@ tatc:
 			--train_max 1000000 --dev_max 100000 
 			
 tatcfast:
-	python classify.py \
+	python3 classify.py \
 			--train $(FEAT_TAT)/train.txt \
 			--dev $(FEAT_TAT)/dev.txt \
 			--test $(FEAT_TAT)/test-blind.txt \
@@ -82,7 +84,7 @@ tatcfast:
 			--train_max 1000 --dev_max 100 --test_max 100
 			
 prof:
-	python -m cProfile -s cumtime classify.py \
+	python3 -m cProfile -s cumtime classify.py \
 			--train $(FEAT_DSL)/train.txt \
 			--dev $(FEAT_DSL)/dev.txt \
 			--test $(FEAT_DSL)/test-blind.txt \
